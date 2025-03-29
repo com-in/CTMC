@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EndlessPixel Server Status</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .server-box {
+            text-align: center;
+            margin: 0 10px;
+        }
+        .server-box h3 {
+            margin-bottom: 10px;
+        }
+        .refresh-time {
+            font-size: 0.8em;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-5">EndlessPixel Server Status</h1>
+        <div class="row justify-content-center">
+            <div class="col-md-4 server-box">
+                <h3>EndlessPixel服务器在线状态</h3>
+                <i id="status-icon" class="fas fa-circle-notch fa-spin fa-2x"></i>
+                <p id="status-text">未知</p>
+            </div>
+            <div class="col-md-4 server-box">
+                <h3>在线人数</h3>
+                <i id="players-icon" class="fas fa-users fa-2x"></i>
+                <p id="online-players">未知</p>
+            </div>
+            <div class="col-md-4 server-box">
+                <h3>服务器版本</h3>
+                <i id="version-icon" class="fas fa-code fa-2x"></i>
+                <p id="server-version">未知</p>
+            </div>
+        </div>
+        <div class="refresh-time mt-5">
+            <p>页面将在 <span id="refresh-time">10</span> 秒后刷新</p>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const apiUrl = 'https://api.mcsrvstat.us/2/vip.gz.frp.one:25568';
+        let timeLeft = 10; // 刷新间隔时间（秒）
+        const refreshInterval = 10000; // 刷新间隔时间（毫秒）
+
+        async function updateServerStatus() {
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+                const data = await response.json();
+
+                // 更新服务器状态
+                const statusText = document.getElementById('status-text');
+                const statusIcon = document.getElementById('status-icon');
+                const onlinePlayers = document.getElementById('online-players');
+                const serverVersion = document.getElementById('server-version');
+
+                if (data.online) {
+                    statusText.textContent = '在线';
+                    statusText.style.color = 'green';
+                    statusIcon.classList.remove('fa-circle-notch', 'fa-spin');
+                    statusIcon.classList.add('fa-check');
+                    statusIcon.style.color = 'green';
+                    onlinePlayers.textContent = data.players.online || 0;
+                    serverVersion.textContent = data.version || '未知';
+                } else {
+                    statusText.textContent = '离线';
+                    statusText.style.color = 'red';
+                    statusIcon.classList.remove('fa-check');
+                    statusIcon.classList.add('fa-times');
+                    statusIcon.style.color = 'red';
+                    onlinePlayers.textContent = 0;
+                    serverVersion.textContent = '未知';
+                }
+            } catch (error) {
+                console.error('获取服务器状态时出错:', error);
+                const statusText = document.getElementById('status-text');
+                const onlinePlayers = document.getElementById('online-players');
+                const serverVersion = document.getElementById('server-version');
+                statusText.textContent = '未知';
+                statusText.style.color = 'orange';
+                onlinePlayers.textContent = 'N/A';
+                serverVersion.textContent = 'N/A';
+            }
+            timeLeft = refreshInterval / 1000;
+        }
+
+        function updateRefreshTime() {
+            const refreshTimeElement = document.getElementById('refresh-time');
+            refreshTimeElement.textContent = timeLeft;
+            if (timeLeft > 0) {
+                timeLeft--;
+            } else {
+                updateServerStatus();
+            }
+        }
+
+        // 初始加载
+        updateServerStatus();
+        // 每秒更新剩余刷新时间
+        setInterval(updateRefreshTime, 1000);
+    </script>
+</body>
+</html>
